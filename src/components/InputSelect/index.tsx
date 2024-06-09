@@ -47,11 +47,6 @@ export function InputSelect<TItem>({
 
     window.addEventListener("scroll", handleScroll, true);
     window.addEventListener("resize", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleScroll);
-    };
   }, [updateDropdownPosition]);
 
   return (
