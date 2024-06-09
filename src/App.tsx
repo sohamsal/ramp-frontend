@@ -29,6 +29,13 @@ export function App() {
     setIsLoading(false)
   }, [employeeUtils, paginatedTransactionsUtils, transactionsByEmployeeUtils])
 
+  const loadViewMoreTransactions = useCallback(async () => {
+    setIsLoading(true)
+    await paginatedTransactionsUtils.fetchAll()
+    setIsLoading(false)
+  }, [paginatedTransactionsUtils])
+
+
   const loadTransactionsByEmployee = useCallback(
     async (employeeId: string) => {
       if (employeeId === '') {
@@ -39,7 +46,7 @@ export function App() {
         await transactionsByEmployeeUtils.fetchById(employeeId)
       }
     },
-    [paginatedTransactionsUtils, transactionsByEmployeeUtils]
+    [loadAllTransactions, paginatedTransactionsUtils, transactionsByEmployeeUtils]
   )
 
   useEffect(() => {
@@ -81,7 +88,7 @@ export function App() {
               className="RampButton"
               disabled={paginatedTransactionsUtils.loading}
               onClick={async () => {
-                await loadAllTransactions()
+                await loadViewMoreTransactions()
               }}
             >
               View More
