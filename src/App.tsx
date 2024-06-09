@@ -12,6 +12,7 @@ export function App() {
   const { data: employees, ...employeeUtils } = useEmployees()
   const { data: paginatedTransactions, ...paginatedTransactionsUtils } = usePaginatedTransactions()
   const { data: transactionsByEmployee, ...transactionsByEmployeeUtils } = useTransactionsByEmployee()
+  const [allTransactionsFetched, setAllTransactionsFetched] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const transactions = useMemo(
@@ -20,6 +21,7 @@ export function App() {
   )
 
   const loadAllTransactions = useCallback(async () => {
+    setAllTransactionsFetched(false)
     setIsLoading(true)
     transactionsByEmployeeUtils.invalidateData()
 
@@ -31,10 +33,10 @@ export function App() {
 
   const loadViewMoreTransactions = useCallback(async () => {
     setIsLoading(true)
+
     await paginatedTransactionsUtils.fetchAll()
     setIsLoading(false)
   }, [paginatedTransactionsUtils])
-
 
   const loadTransactionsByEmployee = useCallback(
     async (employeeId: string) => {
@@ -53,7 +55,12 @@ export function App() {
     if (employees === null && !employeeUtils.loading) {
       loadAllTransactions()
     }
-  }, [employeeUtils.loading, employees, loadAllTransactions])
+    if (paginatedTransactions && paginatedTransactions.nextPage === null) {
+      setAllTransactionsFetched(true);
+    }
+  }, [employeeUtils.loading, employees, allTransactionsFetched, paginatedTransactions, loadAllTransactions])
+
+
 
   return (
     <Fragment>
@@ -85,14 +92,26 @@ export function App() {
 
           {transactions !== null && (
             <button
-              className="RampButton"
-              disabled={paginatedTransactionsUtils.loading}
+              className="RampButton RampButton--disabledHidden"
+              hidden={transactionsByEmployee !== null ||
+                paginatedTransactionsUtils.loading ||
+                allTransactionsFetched ||
+                isLoading}
+
+              // disabled={
+              //   transactionsByEmployee !== null ||
+              //   paginatedTransactionsUtils.loading ||
+              //   allTransactionsFetched ||
+              //   isLoading
+              // }
+              
               onClick={async () => {
                 await loadViewMoreTransactions()
               }}
             >
               View More
             </button>
+
           )}
         </div>
       </main>

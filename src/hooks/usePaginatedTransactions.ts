@@ -27,7 +27,6 @@ export function usePaginatedTransactions(): PaginatedTransactionsResult {
         setAllTransactionsFetched(true)
       }
 
-      // Concatenate the new transactions with the existing ones
       return {
         data: previousResponse.data.concat(response.data),
         nextPage: response.nextPage
