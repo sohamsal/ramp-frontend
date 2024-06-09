@@ -1,7 +1,7 @@
-import Downshift from "downshift"
-import { useCallback, useState } from "react"
-import classNames from "classnames"
-import { DropdownPosition, GetDropdownPositionFn, InputSelectOnChange, InputSelectProps } from "./types"
+import Downshift from "downshift";
+import { useCallback, useEffect, useRef, useState } from "react";
+import classNames from "classnames";
+import { DropdownPosition, GetDropdownPositionFn, InputSelectOnChange, InputSelectProps } from "./types";
 
 export function InputSelect<TItem>({
   label,
@@ -12,23 +12,47 @@ export function InputSelect<TItem>({
   isLoading,
   loadingLabel,
 }: InputSelectProps<TItem>) {
-  const [selectedValue, setSelectedValue] = useState<TItem | null>(defaultValue ?? null)
+  const [selectedValue, setSelectedValue] = useState<TItem | null>(defaultValue ?? null);
   const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({
     top: 0,
     left: 0,
-  })
+  });
+
+  const inputRef = useRef<HTMLDivElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const onChange = useCallback<InputSelectOnChange<TItem>>(
     (selectedItem) => {
       if (selectedItem === null) {
-        return
+        return;
       }
 
-      consumerOnChange(selectedItem)
-      setSelectedValue(selectedItem)
+      consumerOnChange(selectedItem);
+      setSelectedValue(selectedItem);
     },
     [consumerOnChange]
-  )
+  );
+
+  const updateDropdownPosition = useCallback(() => {
+    if (inputRef.current) {
+      const newPosition = getDropdownPosition(inputRef.current);
+      setDropdownPosition(newPosition);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      updateDropdownPosition();
+    };
+
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [updateDropdownPosition]);
 
   return (
     <Downshift<TItem>
@@ -47,8 +71,8 @@ export function InputSelect<TItem>({
         getToggleButtonProps,
         inputValue,
       }) => {
-        const toggleProps = getToggleButtonProps()
-        const parsedSelectedItem = selectedItem === null ? null : parseItem(selectedItem)
+        const toggleProps = getToggleButtonProps();
+        const parsedSelectedItem = selectedItem === null ? null : parseItem(selectedItem);
 
         return (
           <div className="RampInputSelect--root">
@@ -58,41 +82,43 @@ export function InputSelect<TItem>({
             <div className="RampBreak--xs" />
             <div
               className="RampInputSelect--input"
+              ref={inputRef}
               onClick={(event) => {
-                setDropdownPosition(getDropdownPosition(event.target))
-                toggleProps.onClick(event)
+                updateDropdownPosition();
+                toggleProps.onClick(event);
               }}
             >
               {inputValue}
             </div>
 
             <div
+              ref={dropdownRef}
               className={classNames("RampInputSelect--dropdown-container", {
                 "RampInputSelect--dropdown-container-opened": isOpen,
               })}
               {...getMenuProps()}
-              style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
+              style={{ top: dropdownPosition.top, left: dropdownPosition.left, position: 'absolute' }}
             >
               {renderItems()}
             </div>
           </div>
-        )
+        );
 
         function renderItems() {
           if (!isOpen) {
-            return null
+            return null;
           }
 
           if (isLoading) {
-            return <div className="RampInputSelect--dropdown-item">{loadingLabel}...</div>
+            return <div className="RampInputSelect--dropdown-item">{loadingLabel}...</div>;
           }
 
           if (items.length === 0) {
-            return <div className="RampInputSelect--dropdown-item">No items</div>
+            return <div className="RampInputSelect--dropdown-item">No items</div>;
           }
 
           return items.map((item, index) => {
-            const parsedItem = parseItem(item)
+            const parsedItem = parseItem(item);
             return (
               <div
                 key={parsedItem.value}
@@ -109,23 +135,23 @@ export function InputSelect<TItem>({
               >
                 {parsedItem.label}
               </div>
-            )
-          })
+            );
+          });
         }
       }}
     </Downshift>
-  )
+  );
 }
 
 const getDropdownPosition: GetDropdownPositionFn = (target) => {
   if (target instanceof Element) {
-    const { top, left } = target.getBoundingClientRect()
-    const { scrollY } = window
+    const { top, left, height } = target.getBoundingClientRect();
+    const { scrollY, scrollX } = window;
     return {
-      top: scrollY + top + 63,
-      left,
-    }
+      top: scrollY + top + height,
+      left: scrollX + left,
+    };
   }
 
-  return { top: 0, left: 0 }
-}
+  return { top: 0, left: 0 };
+};
