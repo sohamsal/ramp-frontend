@@ -15,25 +15,29 @@ export function App() {
   const [allTransactionsFetched, setAllTransactionsFetched] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
+
   const transactions = useMemo(
     () => paginatedTransactions?.data ?? transactionsByEmployee ?? null,
     [paginatedTransactions, transactionsByEmployee]
   )
 
-  const loadAllTransactions = useCallback(async () => {
-    setAllTransactionsFetched(false)
+  const loadAllEmployees = useCallback(async () => {
     setIsLoading(true)
-    transactionsByEmployeeUtils.invalidateData()
-
     await employeeUtils.fetchAll()
-    await paginatedTransactionsUtils.fetchAll()
-
     setIsLoading(false)
-  }, [employeeUtils, paginatedTransactionsUtils, transactionsByEmployeeUtils])
+  }, [employeeUtils])
+
+  const loadAllTransactions = useCallback(async () => {
+    setIsLoading(true)
+    setAllTransactionsFetched(false)
+    transactionsByEmployeeUtils.invalidateData()
+    await paginatedTransactionsUtils.fetchAll()
+    setIsLoading(false)
+  }, [transactionsByEmployeeUtils, paginatedTransactionsUtils])
+
 
   const loadViewMoreTransactions = useCallback(async () => {
     setIsLoading(true)
-
     await paginatedTransactionsUtils.fetchAll()
     setIsLoading(false)
   }, [paginatedTransactionsUtils])
@@ -53,12 +57,13 @@ export function App() {
 
   useEffect(() => {
     if (employees === null && !employeeUtils.loading) {
+      loadAllEmployees()
       loadAllTransactions()
     }
     if (paginatedTransactions && paginatedTransactions.nextPage === null) {
       setAllTransactionsFetched(true);
     }
-  }, [employeeUtils.loading, employees, allTransactionsFetched, paginatedTransactions, loadAllTransactions])
+  }, [employeeUtils.loading, employees, allTransactionsFetched, paginatedTransactions, loadAllEmployees, loadAllTransactions])
 
 
 
@@ -104,7 +109,7 @@ export function App() {
               //   allTransactionsFetched ||
               //   isLoading
               // }
-              
+
               onClick={async () => {
                 await loadViewMoreTransactions()
               }}
